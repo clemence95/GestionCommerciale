@@ -6,7 +6,7 @@ import java.awt.event.ActionListener;
 public class MainFrame extends JFrame {
 
     public MainFrame() {
-        setTitle("Fenêtre Principale");
+        setTitle("Village Green");
         setSize(500, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
