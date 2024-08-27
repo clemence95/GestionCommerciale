@@ -2,6 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class LoginFrame extends JFrame {
 
@@ -38,7 +42,7 @@ public class LoginFrame extends JFrame {
                 String username = usernameField.getText();
                 String password = new String(passwordField.getPassword());
 
-                // Vérification simple des identifiants
+                // Utiliser la méthode authentifier pour vérifier les identifiants
                 if (authenticate(username, password)) {
                     JOptionPane.showMessageDialog(LoginFrame.this, "Connexion réussie !");
                     openMainWindow();
@@ -49,10 +53,34 @@ public class LoginFrame extends JFrame {
         });
     }
 
-    // Méthode pour authentifier l'utilisateur
+    // Méthode pour authentifier l'utilisateur en vérifiant dans la base de données
     private boolean authenticate(String username, String password) {
-        // Pour l'exemple, on accepte un seul utilisateur
-        return "admin".equals(username) && "password".equals(password);
+        boolean isAuthenticated = false;
+
+        String sql = "SELECT password FROM users WHERE username = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            
+            // Paramétrer la requête SQL
+            statement.setString(1, username);
+
+            // Exécuter la requête
+            ResultSet resultSet = statement.executeQuery();
+
+            // Vérifier le mot de passe
+            if (resultSet.next()) {
+                String storedPassword = resultSet.getString("password");
+
+                // Comparer le mot de passe fourni avec le mot de passe stocké
+                isAuthenticated = storedPassword.equals(password);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return isAuthenticated;
     }
 
     // Méthode pour ouvrir la fenêtre principale après connexion
@@ -64,5 +92,16 @@ public class LoginFrame extends JFrame {
         MainFrame mainFrame = new MainFrame();
         mainFrame.setVisible(true);
     }
+
+    public static void main(String[] args) {
+        // Lancer la fenêtre de connexion
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new LoginFrame().setVisible(true);
+            }
+        });
+    }
 }
+
 
