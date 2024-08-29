@@ -2,6 +2,7 @@
     "java.project.sourcePaths": ["src"],
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
-        "lib/mysql-connector-java-9.0.0.jar"
+        "lib/mysql-connector-java-9.0.0.jar",
+        "lib/json-20210307.jar"  // Ajoutez cette ligne pour inclure la bibliothèque org.json
     ]
 }

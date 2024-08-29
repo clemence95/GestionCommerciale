@@ -8,62 +8,142 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public class MainFrame extends JFrame {
 
     private String jwtToken;
 
-    // Constructeur avec Token JWT
     public MainFrame(String jwtToken) {
         this.jwtToken = jwtToken;
 
         setTitle("Village Green");
-        setSize(500, 400);
+        setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Créer un label de bienvenue
         JLabel welcomeLabel = new JLabel("Bienvenue dans l'application !");
         welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Créer un bouton pour quitter l'application
-        JButton quitButton = new JButton("Quitter l'application");
+        JPanel crudPanel = new JPanel(new GridLayout(2, 2, 10, 10));
 
-        // Ajouter une action au bouton pour fermer l'application
-        quitButton.addActionListener(new ActionListener() {
+        JButton createButton = new JButton("Créer");
+        JButton readButton = new JButton("Lire les Catégories");
+        JButton updateButton = new JButton("Mettre à jour");
+        JButton deleteButton = new JButton("Supprimer");
+
+        crudPanel.add(createButton);
+        crudPanel.add(readButton);
+        crudPanel.add(updateButton);
+        crudPanel.add(deleteButton);
+
+        createButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.exit(0); // Fermer l'application
+                createEntity();
             }
         });
 
-        // Ajouter les composants à la fenêtre
-        setLayout(new BorderLayout());
-        add(welcomeLabel, BorderLayout.NORTH); // Label de bienvenue en haut
-        add(quitButton, BorderLayout.SOUTH);  // Le bouton est placé en bas de la fenêtre
+        readButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                readEntities();
+            }
+        });
 
-        // Utiliser le token JWT pour récupérer des données depuis l'API
-        fetchDataFromApi();
+        updateButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateEntity();
+            }
+        });
+
+        deleteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteEntity();
+            }
+        });
+
+        JButton quitButton = new JButton("Quitter l'application");
+        quitButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+
+        setLayout(new BorderLayout());
+        add(welcomeLabel, BorderLayout.NORTH);
+        add(crudPanel, BorderLayout.CENTER);
+        add(quitButton, BorderLayout.SOUTH);
     }
 
-    // Méthode pour utiliser le token JWT pour faire une requête API
-    private void fetchDataFromApi() {
+    private void createEntity() {
+        System.out.println("Créer une nouvelle entité");
+    }
+
+    private void readEntities() {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://127.0.0.1:8000/api/protected-endpoint")) // Remplacez par votre endpoint protégé
+                .uri(URI.create("https://127.0.0.1:8000/api/categories"))
                 .header("Authorization", "Bearer " + jwtToken)
                 .build();
 
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Réponse de l'API: " + response.body());
-            // Vous pouvez également afficher les données dans l'interface utilisateur
+            if (response.statusCode() == 200) {
+                String responseBody = response.body();
+                System.out.println("Réponse JSON complète reçue de l'API : " + responseBody);
+
+                JSONObject jsonResponse = new JSONObject(responseBody);
+                JSONArray categoriesArray = jsonResponse.getJSONArray("hydra:member");
+
+                DefaultListModel<String> listModel = new DefaultListModel<>();
+                for (int i = 0; i < categoriesArray.length(); i++) {
+                    JSONObject category = categoriesArray.getJSONObject(i);
+
+                    // Afficher tout l'objet JSON pour vérifier sa structure
+                    System.out.println("Objet JSON de la catégorie : " + category.toString());
+
+                    // Extraction des informations
+                    String idUri = category.getString("@id");
+                    String[] parts = idUri.split("/");
+                    String id = parts[parts.length - 1];
+
+                    String nom = category.optString("nom", "N/A");
+                    String image = category.optString("image", "N/A");
+
+                    listModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
+                }
+
+                JList<String> categoriesList = new JList<>(listModel);
+                JScrollPane scrollPane = new JScrollPane(categoriesList);
+
+                JFrame resultFrame = new JFrame("Catégories");
+                resultFrame.setSize(400, 300);
+                resultFrame.add(scrollPane);
+                resultFrame.setLocationRelativeTo(null);
+                resultFrame.setVisible(true);
+
+            } else {
+                System.out.println("Erreur lors de la récupération des catégories : " + response.statusCode());
+            }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
+    private void updateEntity() {
+        System.out.println("Mettre à jour une entité");
+    }
+
+    private void deleteEntity() {
+        System.out.println("Supprimer une entité");
+    }
+
     public static void main(String[] args) {
-        // Pour tester, vous pouvez passer un token fictif
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -73,4 +153,6 @@ public class MainFrame extends JFrame {
         });
     }
 }
+
+
 
