@@ -2,16 +2,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 
 public class LoginFrame extends JFrame {
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JButton loginButton;
+    private String jwtToken;
 
     public LoginFrame() {
         // Configurer la fenêtre de connexion
@@ -42,45 +46,48 @@ public class LoginFrame extends JFrame {
                 String username = usernameField.getText();
                 String password = new String(passwordField.getPassword());
 
-                // Utiliser la méthode authentifier pour vérifier les identifiants
-                if (authenticate(username, password)) {
-                    JOptionPane.showMessageDialog(LoginFrame.this, "Connexion réussie !");
-                    openMainWindow();
-                } else {
-                    JOptionPane.showMessageDialog(LoginFrame.this, "Nom d'utilisateur ou mot de passe incorrect.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                // Utiliser la méthode authentifier pour vérifier les identifiants via l'API
+                try {
+                    if (authenticate(username, password)) {
+                        JOptionPane.showMessageDialog(LoginFrame.this, "Connexion réussie !");
+                        openMainWindow();
+                    } else {
+                        JOptionPane.showMessageDialog(LoginFrame.this, "Nom d'utilisateur ou mot de passe incorrect.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (IOException | InterruptedException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(LoginFrame.this, "Erreur lors de la connexion à l'API.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
     }
 
-    // Méthode pour authentifier l'utilisateur en vérifiant dans la base de données
-    private boolean authenticate(String username, String password) {
-        boolean isAuthenticated = false;
+    // Méthode pour authentifier l'utilisateur via l'API Symfony
+    private boolean authenticate(String username, String password) throws IOException, InterruptedException {
+        HttpClient client = HttpClient.newHttpClient();
+        String json = String.format("{\"username\":\"%s\", \"password\":\"%s\"}", username, password);
 
-        String sql = "SELECT password FROM users WHERE username = ?";
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://127.0.0.1:8000/api/login"))
+                .header("Content-Type", "application/json")
+                .POST(BodyPublishers.ofString(json))
+                .build();
 
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            
-            // Paramétrer la requête SQL
-            statement.setString(1, username);
+        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
-            // Exécuter la requête
-            ResultSet resultSet = statement.executeQuery();
-
-            // Vérifier le mot de passe
-            if (resultSet.next()) {
-                String storedPassword = resultSet.getString("password");
-
-                // Comparer le mot de passe fourni avec le mot de passe stocké
-                isAuthenticated = storedPassword.equals(password);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (response.statusCode() == 200) {
+            // Extraire le token JWT de la réponse
+            jwtToken = parseTokenFromResponse(response.body());
+            return true;
+        } else {
+            return false;
         }
+    }
 
-        return isAuthenticated;
+    // Méthode pour extraire le token JWT de la réponse JSON
+    private String parseTokenFromResponse(String responseBody) {
+        // Simplifié : en supposant que le token est dans le format {"token":"eyJhbGc..."}
+        return responseBody.split(":")[1].replaceAll("[\"{}]", "").trim();
     }
 
     // Méthode pour ouvrir la fenêtre principale après connexion
@@ -88,8 +95,8 @@ public class LoginFrame extends JFrame {
         // Fermer la fenêtre de connexion
         dispose();
 
-        // Ouvrir la fenêtre principale
-        MainFrame mainFrame = new MainFrame();
+        // Ouvrir la fenêtre principale avec le token JWT disponible
+        MainFrame mainFrame = new MainFrame(jwtToken);
         mainFrame.setVisible(true);
     }
 
@@ -103,5 +110,6 @@ public class LoginFrame extends JFrame {
         });
     }
 }
+
 
 
