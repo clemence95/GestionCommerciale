@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -68,43 +67,64 @@ public class ProduitFrame extends JFrame {
     }
 
     private void createEntity() {
-        String nom = JOptionPane.showInputDialog(this, "Entrez le nom du produit :");
-        if (nom != null && !nom.isEmpty()) {
-            String description = JOptionPane.showInputDialog(this, "Entrez la description du produit :");
-            String prix = JOptionPane.showInputDialog(this, "Entrez le prix du produit :");
-
-            if (description != null && !description.isEmpty() && prix != null && !prix.isEmpty()) {
-                JSONObject produitData = new JSONObject();
-                produitData.put("nom", nom);
-                produitData.put("description", description);
-                produitData.put("prix", Double.parseDouble(prix));
-
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("https://127.0.0.1:8000/api/produits"))
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + jwtToken)
-                        .POST(HttpRequest.BodyPublishers.ofString(produitData.toString()))
-                        .build();
-
-                try {
-                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    if (response.statusCode() == 201) {  // 201 = Created
-                        JOptionPane.showMessageDialog(this, "Produit créé avec succès !");
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Erreur lors de la création du produit : " + response.statusCode() +
-                                "\nRéponse: " + response.body());
-                    }
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
+        String libelleCourt = JOptionPane.showInputDialog(this, "Entrez le nom du produit :");
+        String libelleLong = JOptionPane.showInputDialog(this, "Entrez la description du produit :");
+        String referenceFournisseur = JOptionPane.showInputDialog(this, "Entrez la référence fournisseur :");
+        String prixAchatStr = JOptionPane.showInputDialog(this, "Entrez le prix d'achat du produit :");
+        String prixVenteStr = JOptionPane.showInputDialog(this, "Entrez le prix de vente du produit :");
+        String stockStr = JOptionPane.showInputDialog(this, "Entrez la quantité en stock :");
+        String actifStr = JOptionPane.showInputDialog(this, "Le produit est-il actif ? (true/false)");
+        String sousCategorieId = JOptionPane.showInputDialog(this, "Entrez l'ID de la sous-catégorie :");
+        String photo = JOptionPane.showInputDialog(this, "Entrez l'URL de la photo du produit :");
+        String fournisseurId = JOptionPane.showInputDialog(this, "Entrez l'ID du fournisseur :");
+    
+        if (libelleCourt != null && !libelleCourt.isEmpty() && 
+            libelleLong != null && !libelleLong.isEmpty() &&
+            referenceFournisseur != null && !referenceFournisseur.isEmpty() &&
+            prixAchatStr != null && !prixAchatStr.isEmpty() &&
+            prixVenteStr != null && !prixVenteStr.isEmpty() &&
+            stockStr != null && !stockStr.isEmpty() &&
+            actifStr != null && !actifStr.isEmpty() &&
+            sousCategorieId != null && !sousCategorieId.isEmpty() &&
+            photo != null && !photo.isEmpty() &&
+            fournisseurId != null && !fournisseurId.isEmpty()) {
+    
+            JSONObject produitData = new JSONObject();
+            produitData.put("libelleCourt", libelleCourt);
+            produitData.put("libelleLong", libelleLong);
+            produitData.put("referenceFournisseur", referenceFournisseur);
+            produitData.put("prixAchat", Double.parseDouble(prixAchatStr));
+            produitData.put("prixVente", Double.parseDouble(prixVenteStr));
+            produitData.put("stock", Integer.parseInt(stockStr));
+            produitData.put("actif", Boolean.parseBoolean(actifStr));
+            produitData.put("sousCategorie", "/api/categories/" + sousCategorieId);
+            produitData.put("photo", photo);
+            produitData.put("idFournisseur", "/api/fournisseurs/" + fournisseurId);
+    
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://127.0.0.1:8000/api/produits"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .POST(HttpRequest.BodyPublishers.ofString(produitData.toString()))
+                    .build();
+    
+            try {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 201) {  // 201 = Created
+                    JOptionPane.showMessageDialog(this, "Produit créé avec succès !");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Erreur lors de la création du produit : " + response.statusCode() +
+                            "\nRéponse: " + response.body());
                 }
-            } else {
-                JOptionPane.showMessageDialog(this, "Description ou prix invalide.");
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
             }
         } else {
-            JOptionPane.showMessageDialog(this, "Nom de produit invalide.");
+            JOptionPane.showMessageDialog(this, "Certaines informations sont manquantes ou invalides.");
         }
     }
+    
 
     private void readEntities() {
         HttpClient client = HttpClient.newHttpClient();
@@ -112,39 +132,41 @@ public class ProduitFrame extends JFrame {
                 .uri(URI.create("https://127.0.0.1:8000/api/produits"))
                 .header("Authorization", "Bearer " + jwtToken)
                 .build();
-
+    
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("Code de statut HTTP : " + response.statusCode());
             if (response.statusCode() == 200) {
                 String responseBody = response.body();
-
+                System.out.println("Réponse de l'API : " + responseBody);
+    
                 JSONObject jsonResponse = new JSONObject(responseBody);
                 JSONArray produitsArray = jsonResponse.getJSONArray("hydra:member");
-
+    
                 DefaultListModel<String> listModel = new DefaultListModel<>();
                 for (int i = 0; i < produitsArray.length(); i++) {
                     JSONObject produit = produitsArray.getJSONObject(i);
-
+    
                     String idUri = produit.getString("@id");
                     String[] parts = idUri.split("/");
                     String id = parts[parts.length - 1];
-
-                    String nom = produit.optString("nom", "N/A");
-                    String description = produit.optString("description", "N/A");
-                    double prix = produit.optDouble("prix", 0.0);
-
+    
+                    String nom = produit.optString("libelleCourt", "N/A");
+                    String description = produit.optString("libelleLong", "N/A");
+                    double prix = produit.optDouble("prixVente", 0.0);
+    
                     listModel.addElement("ID: " + id + ", Nom: " + nom + ", Description: " + description + ", Prix: " + prix);
                 }
-
+    
                 JList<String> produitsList = new JList<>(listModel);
                 JScrollPane scrollPane = new JScrollPane(produitsList);
-
+    
                 JFrame resultFrame = new JFrame("Produits");
                 resultFrame.setSize(400, 300);
                 resultFrame.add(scrollPane);
                 resultFrame.setLocationRelativeTo(null);
                 resultFrame.setVisible(true);
-
+    
             } else {
                 JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des produits : " + response.statusCode());
             }
@@ -152,7 +174,7 @@ public class ProduitFrame extends JFrame {
             e.printStackTrace();
         }
     }
-
+    
     private void updateEntity() {
         String id = JOptionPane.showInputDialog(this, "Entrez l'ID du produit à mettre à jour :");
         if (id != null && !id.isEmpty()) {
@@ -162,9 +184,9 @@ public class ProduitFrame extends JFrame {
 
             if (nom != null && !nom.isEmpty() && description != null && !description.isEmpty() && prix != null && !prix.isEmpty()) {
                 JSONObject produitData = new JSONObject();
-                produitData.put("nom", nom);
-                produitData.put("description", description);
-                produitData.put("prix", Double.parseDouble(prix));
+                produitData.put("libelleCourt", nom);
+                produitData.put("libelleLong", description);
+                produitData.put("prixVente", Double.parseDouble(prix));
 
                 HttpClient client = HttpClient.newHttpClient();
                 HttpRequest request = HttpRequest.newBuilder()
@@ -217,4 +239,5 @@ public class ProduitFrame extends JFrame {
         }
     }
 }
+
 
