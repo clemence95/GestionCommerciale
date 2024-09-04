@@ -19,10 +19,11 @@ public class MainFrame extends JFrame {
         welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(1, 2, 10, 10));
+        buttonPanel.setLayout(new GridLayout(1, 3, 10, 10)); // Ajout d'une colonne pour le 3ème bouton
 
         JButton categorieButton = new JButton("Catégories");
         JButton produitButton = new JButton("Produits");
+        JButton commandeButton = new JButton("Commandes");  // Nouveau bouton
 
         categorieButton.addActionListener(new ActionListener() {
             @Override
@@ -38,8 +39,16 @@ public class MainFrame extends JFrame {
             }
         });
 
+        commandeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openCommandeFrame();  // Ajout d'une action pour ouvrir la fenêtre Commande
+            }
+        });
+
         buttonPanel.add(categorieButton);
         buttonPanel.add(produitButton);
+        buttonPanel.add(commandeButton);  // Ajout du bouton dans le panel
 
         setLayout(new BorderLayout());
         add(welcomeLabel, BorderLayout.NORTH);
@@ -56,6 +65,12 @@ public class MainFrame extends JFrame {
         produitFrame.setVisible(true);
     }
 
+    // Nouvelle méthode pour ouvrir la fenêtre de Commandes
+    private void openCommandeFrame() {
+        CommandeFrame commandeFrame = new CommandeFrame(jwtToken); // Par exemple, une fenêtre Commande
+        commandeFrame.setVisible(true);
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -66,6 +81,7 @@ public class MainFrame extends JFrame {
         });
     }
 }
+
 
 
 
