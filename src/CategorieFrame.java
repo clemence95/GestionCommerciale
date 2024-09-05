@@ -137,45 +137,68 @@ public class CategorieFrame extends JFrame {
                 .uri(URI.create("https://127.0.0.1:8000/api/categories"))
                 .header("Authorization", "Bearer " + jwtToken)
                 .build();
-
+    
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 String responseBody = response.body();
-
+    
                 JSONObject jsonResponse = new JSONObject(responseBody);
                 JSONArray categoriesArray = jsonResponse.getJSONArray("hydra:member");
-
-                DefaultListModel<String> listModel = new DefaultListModel<>();
+    
+                // Modèles pour les catégories parents et sous-catégories
+                DefaultListModel<String> parentModel = new DefaultListModel<>();
+                DefaultListModel<String> subcategoryModel = new DefaultListModel<>();
+    
                 for (int i = 0; i < categoriesArray.length(); i++) {
                     JSONObject category = categoriesArray.getJSONObject(i);
-
+    
                     String idUri = category.getString("@id");
                     String[] parts = idUri.split("/");
                     String id = parts[parts.length - 1];
-
+    
                     String nom = category.optString("nom", "N/A");
                     String image = category.optString("image", "N/A");
-
-                    listModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
+                    String categorieParent = category.optString("categorieParent", null);  // Champ contenant la catégorie parente
+    
+                    // Séparer les catégories parents et sous-catégories
+                    if (categorieParent == null || categorieParent.isEmpty()) {
+                        // C'est une catégorie parent
+                        parentModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
+                    } else {
+                        // C'est une sous-catégorie
+                        subcategoryModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
+                    }
                 }
-
-                JList<String> categoriesList = new JList<>(listModel);
-                JScrollPane scrollPane = new JScrollPane(categoriesList);
-
+    
+                // Créer les listes pour afficher les catégories parents et sous-catégories
+                JList<String> parentList = new JList<>(parentModel);
+                JList<String> subcategoryList = new JList<>(subcategoryModel);
+    
+                // Ajouter les listes dans des panneaux de défilement
+                JScrollPane parentScrollPane = new JScrollPane(parentList);
+                JScrollPane subcategoryScrollPane = new JScrollPane(subcategoryList);
+    
+                // Créer la fenêtre avec deux sections (catégories parents et sous-catégories)
                 JFrame resultFrame = new JFrame("Catégories");
-                resultFrame.setSize(400, 300);
-                resultFrame.add(scrollPane);
+                resultFrame.setLayout(new GridLayout(2, 1));  // 2 lignes, 1 colonne
+                resultFrame.setSize(400, 600);
+                resultFrame.add(new JLabel("Catégories Parents"));
+                resultFrame.add(parentScrollPane);
+                resultFrame.add(new JLabel("Sous-Catégories"));
+                resultFrame.add(subcategoryScrollPane);
                 resultFrame.setLocationRelativeTo(null);
                 resultFrame.setVisible(true);
-
+    
             } else {
-                JOptionPane.showMessageDialog(this, "Erreur lors de la récupération des catégories : " + response.statusCode());
+                JOptionPane.showMessageDialog(null, "Erreur lors de la récupération des catégories : " + response.statusCode());
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
+    
+        
 
     private void updateEntity() {
         String id = JOptionPane.showInputDialog(this, "Entrez l'ID de la catégorie à mettre à jour :");
