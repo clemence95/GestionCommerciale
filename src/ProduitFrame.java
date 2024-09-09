@@ -201,7 +201,8 @@ public class ProduitFrame extends JFrame {
                     if (response.statusCode() == 200) {  // 200 = OK
                         JOptionPane.showMessageDialog(this, "Produit mis à jour avec succès !");
                     } else {
-                        JOptionPane.showMessageDialog(this, "Erreur lors de la mise à jour du produit : " + response.statusCode());
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la mise à jour du produit : " + response.statusCode() + produitData.toString());
+                        // System.out.println(produitData.toString());
                     }
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
