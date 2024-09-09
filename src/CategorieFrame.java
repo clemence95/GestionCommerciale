@@ -90,6 +90,12 @@ public class CategorieFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "ID de catégorie parent invalide.");
             }
         }
+
+        // Réaffiche la boîte de dialogue pour créer une autre entité
+        int retry = JOptionPane.showConfirmDialog(this, "Souhaitez-vous créer une autre catégorie ?", "Nouvelle création", JOptionPane.YES_NO_OPTION);
+        if (retry == JOptionPane.YES_OPTION) {
+            createEntity();  // Relance la création d'une autre catégorie
+        }
     }
 
     private void createCategory(String parentId) {
@@ -137,51 +143,44 @@ public class CategorieFrame extends JFrame {
                 .uri(URI.create("https://127.0.0.1:8000/api/categories"))
                 .header("Authorization", "Bearer " + jwtToken)
                 .build();
-    
+
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 String responseBody = response.body();
-    
+
                 JSONObject jsonResponse = new JSONObject(responseBody);
                 JSONArray categoriesArray = jsonResponse.getJSONArray("hydra:member");
-    
-                // Modèles pour les catégories parents et sous-catégories
+
                 DefaultListModel<String> parentModel = new DefaultListModel<>();
                 DefaultListModel<String> subcategoryModel = new DefaultListModel<>();
-    
+
                 for (int i = 0; i < categoriesArray.length(); i++) {
                     JSONObject category = categoriesArray.getJSONObject(i);
-    
+
                     String idUri = category.getString("@id");
                     String[] parts = idUri.split("/");
                     String id = parts[parts.length - 1];
-    
+
                     String nom = category.optString("nom", "N/A");
                     String image = category.optString("image", "N/A");
-                    String categorieParent = category.optString("categorieParent", null);  // Champ contenant la catégorie parente
-    
-                    // Séparer les catégories parents et sous-catégories
+                    String categorieParent = category.optString("categorieParent", null);
+
                     if (categorieParent == null || categorieParent.isEmpty()) {
-                        // C'est une catégorie parent
                         parentModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
                     } else {
-                        // C'est une sous-catégorie
                         subcategoryModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
                     }
                 }
-    
-                // Créer les listes pour afficher les catégories parents et sous-catégories
+
                 JList<String> parentList = new JList<>(parentModel);
                 JList<String> subcategoryList = new JList<>(subcategoryModel);
-    
-                // Ajouter les listes dans des panneaux de défilement
+
                 JScrollPane parentScrollPane = new JScrollPane(parentList);
                 JScrollPane subcategoryScrollPane = new JScrollPane(subcategoryList);
-    
-                // Créer la fenêtre avec deux sections (catégories parents et sous-catégories)
+
                 JFrame resultFrame = new JFrame("Catégories");
-                resultFrame.setLayout(new GridLayout(2, 1));  // 2 lignes, 1 colonne
+                resultFrame.setLayout(new GridLayout(2, 1));
                 resultFrame.setSize(400, 600);
                 resultFrame.add(new JLabel("Catégories Parents"));
                 resultFrame.add(parentScrollPane);
@@ -189,7 +188,7 @@ public class CategorieFrame extends JFrame {
                 resultFrame.add(subcategoryScrollPane);
                 resultFrame.setLocationRelativeTo(null);
                 resultFrame.setVisible(true);
-    
+
             } else {
                 JOptionPane.showMessageDialog(null, "Erreur lors de la récupération des catégories : " + response.statusCode());
             }
@@ -197,109 +196,49 @@ public class CategorieFrame extends JFrame {
             e.printStackTrace();
         }
     }
-    
+
     private void updateEntity() {
-        // Étape 1 : Récupérer et afficher les catégories
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://127.0.0.1:8000/api/categories"))
-                .header("Authorization", "Bearer " + jwtToken)
-                .build();
-    
-        try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                String responseBody = response.body();
-    
-                JSONObject jsonResponse = new JSONObject(responseBody);
-                JSONArray categoriesArray = jsonResponse.getJSONArray("hydra:member");
-    
-                // Modèles pour les catégories parents et sous-catégories
-                DefaultListModel<String> parentModel = new DefaultListModel<>();
-                DefaultListModel<String> subcategoryModel = new DefaultListModel<>();
-    
-                for (int i = 0; i < categoriesArray.length(); i++) {
-                    JSONObject category = categoriesArray.getJSONObject(i);
-    
-                    String idUri = category.getString("@id");
-                    String[] parts = idUri.split("/");
-                    String id = parts[parts.length - 1];
-    
-                    String nom = category.optString("nom", "N/A");
-                    String image = category.optString("image", "N/A");
-                    String categorieParent = category.optString("categorieParent", null);  // Champ contenant la catégorie parente
-    
-                    // Séparer les catégories parents et sous-catégories
-                    if (categorieParent == null || categorieParent.isEmpty()) {
-                        parentModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image);
+        String id = JOptionPane.showInputDialog(this, "Entrez l'ID de la catégorie à mettre à jour :");
+        if (id != null && !id.isEmpty()) {
+            String nom = JOptionPane.showInputDialog(this, "Entrez le nouveau nom de la catégorie :");
+            String imagePath = JOptionPane.showInputDialog(this, "Entrez l'URL de la nouvelle image de la catégorie :");
+
+            if (nom != null && !nom.isEmpty() && imagePath != null && !imagePath.isEmpty()) {
+                JSONObject categoryData = new JSONObject();
+                categoryData.put("nom", nom);
+                categoryData.put("image", imagePath);
+
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create("https://127.0.0.1:8000/api/categories/" + id))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .PUT(HttpRequest.BodyPublishers.ofString(categoryData.toString()))
+                        .build();
+
+                try {
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {  // 200 = OK
+                        JOptionPane.showMessageDialog(this, "Catégorie mise à jour avec succès !");
                     } else {
-                        subcategoryModel.addElement("ID: " + id + ", Nom: " + nom + ", Image: " + image + ", Parent ID: " + categorieParent);
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la mise à jour de la catégorie : " + response.statusCode());
                     }
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
                 }
-    
-                // Afficher les catégories parents et sous-catégories dans des panneaux de défilement
-                JList<String> parentList = new JList<>(parentModel);
-                JList<String> subcategoryList = new JList<>(subcategoryModel);
-    
-                JScrollPane parentScrollPane = new JScrollPane(parentList);
-                JScrollPane subcategoryScrollPane = new JScrollPane(subcategoryList);
-    
-                // Créer une fenêtre temporaire pour afficher les catégories
-                JFrame categoryFrame = new JFrame("Sélectionner une Catégorie");
-                categoryFrame.setLayout(new GridLayout(2, 1));  // 2 lignes, 1 colonne
-                categoryFrame.setSize(400, 600);
-                categoryFrame.add(new JLabel("Catégories Parents"));
-                categoryFrame.add(parentScrollPane);
-                categoryFrame.add(new JLabel("Sous-Catégories"));
-                categoryFrame.add(subcategoryScrollPane);
-                categoryFrame.setLocationRelativeTo(null);
-                categoryFrame.setVisible(true);
-    
-                // Étape 2 : Sélectionner une catégorie à mettre à jour
-                String id = JOptionPane.showInputDialog(categoryFrame, "Entrez l'ID de la catégorie à mettre à jour :");
-                if (id != null && !id.isEmpty()) {
-                    String nom = JOptionPane.showInputDialog(categoryFrame, "Entrez le nouveau nom de la catégorie :");
-                    String imagePath = JOptionPane.showInputDialog(categoryFrame, "Entrez le chemin d'accès de la nouvelle image de la catégorie :");
-    
-                    if (nom != null && !nom.isEmpty() && imagePath != null && !imagePath.isEmpty()) {
-                        // Création de l'objet JSON avec le nom et le chemin de l'image
-                        JSONObject categoryData = new JSONObject();
-                        categoryData.put("nom", nom);
-                        categoryData.put("image", imagePath);  // Ajout du chemin de l'image dans les données à envoyer
-    
-                        HttpRequest updateRequest = HttpRequest.newBuilder()
-                                .uri(URI.create("https://127.0.0.1:8000/api/categories/" + id))
-                                .header("Content-Type", "application/json")
-                                .header("Authorization", "Bearer " + jwtToken)
-                                .PUT(HttpRequest.BodyPublishers.ofString(categoryData.toString()))
-                                .build();
-    
-                        try {
-                            HttpResponse<String> updateResponse = client.send(updateRequest, HttpResponse.BodyHandlers.ofString());
-                            if (updateResponse.statusCode() == 200) {  // 200 = OK
-                                JOptionPane.showMessageDialog(categoryFrame, "Catégorie mise à jour avec succès !");
-                            } else {
-                                JOptionPane.showMessageDialog(categoryFrame, "Erreur lors de la mise à jour de la catégorie : " + updateResponse.statusCode());
-                            }
-                        } catch (IOException | InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        JOptionPane.showMessageDialog(categoryFrame, "Nom de catégorie ou chemin d'image invalide.");
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(categoryFrame, "ID de catégorie invalide.");
-                }
-    
             } else {
-                JOptionPane.showMessageDialog(null, "Erreur lors de la récupération des catégories : " + response.statusCode());
+                JOptionPane.showMessageDialog(this, "Nom de catégorie ou URL de l'image invalide.");
             }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        } else {
+            JOptionPane.showMessageDialog(this, "ID de catégorie invalide.");
+        }
+
+        // Réaffiche la boîte de dialogue pour mettre à jour une autre catégorie
+        int retry = JOptionPane.showConfirmDialog(this, "Souhaitez-vous mettre à jour une autre catégorie ?", "Nouvelle mise à jour", JOptionPane.YES_NO_OPTION);
+        if (retry == JOptionPane.YES_OPTION) {
+            updateEntity();  // Relance la mise à jour d'une autre catégorie
         }
     }
-    
-    
 
     private void deleteEntity() {
         String id = JOptionPane.showInputDialog(this, "Entrez l'ID de la catégorie à supprimer :");
@@ -323,6 +262,12 @@ public class CategorieFrame extends JFrame {
             }
         } else {
             JOptionPane.showMessageDialog(this, "ID de catégorie invalide.");
+        }
+
+        // Réaffiche la boîte de dialogue pour supprimer une autre catégorie
+        int retry = JOptionPane.showConfirmDialog(this, "Souhaitez-vous supprimer une autre catégorie ?", "Nouvelle suppression", JOptionPane.YES_NO_OPTION);
+        if (retry == JOptionPane.YES_OPTION) {
+            deleteEntity();  // Relance la suppression d'une autre catégorie
         }
     }
 }
