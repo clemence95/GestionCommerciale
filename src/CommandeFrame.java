@@ -33,7 +33,7 @@ public class CommandeFrame extends JFrame {
     private void getCommandesFromAPI(JTextArea commandesArea) {
         try {
             // Créer le client HTTP
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient httpClient = HttpClient.newHttpClient();
 
             // Créer la requête HTTP
             HttpRequest request = HttpRequest.newBuilder()
@@ -43,7 +43,7 @@ public class CommandeFrame extends JFrame {
                     .build();
 
             // Envoyer la requête et obtenir la réponse
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Vérifier si la requête a réussi (code 200)
             if (response.statusCode() == 200) {
@@ -84,23 +84,10 @@ public class CommandeFrame extends JFrame {
 
                 // Extraire l'ID de l'URI dans "@id"
                 String commandeUri = commande.getString("@id");
-                String[] uriParts = commandeUri.split("/");  // Découpe l'URI pour obtenir l'ID
-                String commandeId = uriParts[uriParts.length - 1];  // L'ID est la dernière partie de l'URI
 
-                // Extraire d'autres détails de la commande si disponibles
-                String type = commande.optString("@type", "N/A");
-                // Tu peux ajouter d'autres champs ici si disponibles dans la réponse, par exemple :
-                // String client = commande.optString("client", "Inconnu");
-                // double total = commande.optDouble("total", 0);
-
-                // Ajoute les informations de la commande
-                commandesText.append("Commande ID: ").append(commandeId).append("\n");
-                commandesText.append("Type: ").append(type).append("\n");
-
-                // Si tu as des champs supplémentaires à afficher, ajoute-les ici :
-                // commandesText.append("Client: ").append(client).append("\n");
-                // commandesText.append("Total: ").append(total).append(" €\n");
-
+                // Requête supplémentaire pour obtenir les détails de la commande
+                String detailsCommande = getCommandeDetails(commandeUri);
+                commandesText.append(detailsCommande).append("\n");
                 commandesText.append("----------------------------\n");
             }
 
@@ -112,6 +99,41 @@ public class CommandeFrame extends JFrame {
         }
     }
 
+    // Méthode pour obtenir les détails d'une commande en faisant une requête supplémentaire
+    private String getCommandeDetails(String commandeUri) {
+        try {
+            // Créer le client HTTP
+            HttpClient httpClient = HttpClient.newHttpClient();  // Renommé pour éviter la duplication
+
+            // Créer la requête HTTP pour l'URI spécifique de la commande
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://127.0.0.1:8000" + commandeUri))  // Complète l'URI avec l'URL de base
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .GET()
+                    .build();
+
+            // Envoyer la requête et obtenir la réponse
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JSONObject commandeDetails = new JSONObject(response.body());
+
+                // Extraire les détails de la commande (ajoute ici tous les champs que tu veux)
+                String commandeId = commandeDetails.getString("@id").split("/")[3];
+                String clientNom = commandeDetails.optString("client", "Inconnu");  // Renommé "clientNom"
+                double total = commandeDetails.optDouble("total", 0.0);
+                String statut = commandeDetails.optString("statut", "Inconnu");
+
+                return "Commande ID: " + commandeId + "\nClient: " + clientNom + "\nTotal: " + total + " €\nStatut: " + statut;
+            } else {
+                return "Erreur lors de la récupération des détails de la commande (Code " + response.statusCode() + ")";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Erreur lors de la récupération des détails de la commande.";
+        }
+    }
+
     // Méthode principale pour tester l'interface (avec un exemple de JWT)
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -120,6 +142,7 @@ public class CommandeFrame extends JFrame {
         });
     }
 }
+
 
 
 
