@@ -64,42 +64,48 @@ public class CommandeFrame extends JFrame {
     // Méthode pour parser et afficher les commandes
     private void parseCommandes(String jsonResponse, JTextArea commandesArea) {
         try {
-            // Imprimer le JSON brut pour voir à quoi il ressemble
-            System.out.println("JSON brut reçu : " + jsonResponse);
+            // Parser la réponse JSON
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray commandesArray = jsonObject.getJSONArray("hydra:member");  // Récupère le tableau de commandes
 
-            // Si la réponse est un tableau JSON direct
-            if (jsonResponse.startsWith("[")) {
-                JSONArray commandesArray = new JSONArray(jsonResponse);
-                StringBuilder commandesText = new StringBuilder();
-
-                for (int i = 0; i < commandesArray.length(); i++) {
-                    JSONObject commande = commandesArray.getJSONObject(i);
-                    commandesText.append("Commande ID: ").append(commande.getInt("id")).append("\n");
-                    commandesText.append("Client: ").append(commande.getString("client")).append("\n");
-                    commandesText.append("Total: ").append(commande.getDouble("total")).append(" €\n");
-                    commandesText.append("Statut: ").append(commande.getString("statut")).append("\n");
-                    commandesText.append("----------------------------\n");
-                }
-
-                commandesArea.setText(commandesText.toString());
-            } 
-            // Si la réponse est un objet JSON qui contient un tableau
-            else {
-                JSONObject jsonObject = new JSONObject(jsonResponse);
-                JSONArray commandesArray = jsonObject.getJSONArray("data"); // Adapte le nom de la clé si nécessaire
-                StringBuilder commandesText = new StringBuilder();
-
-                for (int i = 0; i < commandesArray.length(); i++) {
-                    JSONObject commande = commandesArray.getJSONObject(i);
-                    commandesText.append("Commande ID: ").append(commande.getInt("id")).append("\n");
-                    commandesText.append("Client: ").append(commande.getString("client")).append("\n");
-                    commandesText.append("Total: ").append(commande.getDouble("total")).append(" €\n");
-                    commandesText.append("Statut: ").append(commande.getString("statut")).append("\n");
-                    commandesText.append("----------------------------\n");
-                }
-
-                commandesArea.setText(commandesText.toString());
+            // Vérifier si le tableau est vide
+            if (commandesArray.length() == 0) {
+                commandesArea.setText("Aucune commande trouvée.");
+                return;
             }
+
+            // Construire le texte des commandes
+            StringBuilder commandesText = new StringBuilder();
+            for (int i = 0; i < commandesArray.length(); i++) {
+                JSONObject commande = commandesArray.getJSONObject(i);
+
+                // Affiche la commande brute dans la console pour déboguer
+                System.out.println("Commande brute: " + commande.toString());
+
+                // Extraire l'ID de l'URI dans "@id"
+                String commandeUri = commande.getString("@id");
+                String[] uriParts = commandeUri.split("/");  // Découpe l'URI pour obtenir l'ID
+                String commandeId = uriParts[uriParts.length - 1];  // L'ID est la dernière partie de l'URI
+
+                // Extraire d'autres détails de la commande si disponibles
+                String type = commande.optString("@type", "N/A");
+                // Tu peux ajouter d'autres champs ici si disponibles dans la réponse, par exemple :
+                // String client = commande.optString("client", "Inconnu");
+                // double total = commande.optDouble("total", 0);
+
+                // Ajoute les informations de la commande
+                commandesText.append("Commande ID: ").append(commandeId).append("\n");
+                commandesText.append("Type: ").append(type).append("\n");
+
+                // Si tu as des champs supplémentaires à afficher, ajoute-les ici :
+                // commandesText.append("Client: ").append(client).append("\n");
+                // commandesText.append("Total: ").append(total).append(" €\n");
+
+                commandesText.append("----------------------------\n");
+            }
+
+            // Afficher les commandes dans la zone de texte
+            commandesArea.setText(commandesText.toString());
         } catch (Exception e) {
             e.printStackTrace();
             commandesArea.setText("Erreur lors du parsing des commandes.");
@@ -114,6 +120,7 @@ public class CommandeFrame extends JFrame {
         });
     }
 }
+
 
 
 
