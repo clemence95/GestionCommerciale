@@ -180,41 +180,70 @@ public class ProduitFrame extends JFrame {
         if (id != null && !id.isEmpty()) {
             String nom = JOptionPane.showInputDialog(this, "Entrez le nouveau nom du produit :");
             String description = JOptionPane.showInputDialog(this, "Entrez la nouvelle description du produit :");
-            String prix = JOptionPane.showInputDialog(this, "Entrez le nouveau prix du produit :");
-
-            if (nom != null && !nom.isEmpty() && description != null && !description.isEmpty() && prix != null && !prix.isEmpty()) {
-                JSONObject produitData = new JSONObject();
-                produitData.put("libelleCourt", nom);
-                produitData.put("libelleLong", description);
-                produitData.put("prixVente", Double.parseDouble(prix));
-
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create("https://127.0.0.1:8000/api/produits/" + id))
-                        .header("Content-Type", "application/json")
-                        .header("Authorization", "Bearer " + jwtToken)
-                        .PUT(HttpRequest.BodyPublishers.ofString(produitData.toString()))
-                        .build();
-
+            String referenceFournisseur = JOptionPane.showInputDialog(this, "Entrez la référence fournisseur :");
+            String prixAchat = JOptionPane.showInputDialog(this, "Entrez le prix d'achat :");
+            String prixVente = JOptionPane.showInputDialog(this, "Entrez le prix de vente :");
+            String stock = JOptionPane.showInputDialog(this, "Entrez la quantité en stock :");
+            String actif = JOptionPane.showInputDialog(this, "Le produit est-il actif ? (true/false) :");
+            String photo = JOptionPane.showInputDialog(this, "Entrez le chemin ou l'URL de la photo du produit :");
+            String sousCategorie = JOptionPane.showInputDialog(this, "Entrez l'ID de la sous-catégorie :");
+            String idFournisseur = JOptionPane.showInputDialog(this, "Entrez l'ID du fournisseur :");
+    
+            if (nom != null && !nom.isEmpty() && description != null && !description.isEmpty() 
+                    && referenceFournisseur != null && !referenceFournisseur.isEmpty()
+                    && prixAchat != null && !prixAchat.isEmpty() && prixVente != null && !prixVente.isEmpty()
+                    && stock != null && !stock.isEmpty() && actif != null && !actif.isEmpty()
+                    && photo != null && !photo.isEmpty() && sousCategorie != null && !sousCategorie.isEmpty()
+                    && idFournisseur != null && !idFournisseur.isEmpty()) {
+    
                 try {
+                    // Création de l'objet JSON avec tous les champs
+                    JSONObject produitData = new JSONObject();
+                    produitData.put("libelleCourt", nom);
+                    produitData.put("libelleLong", description);
+                    produitData.put("referenceFournisseur", referenceFournisseur);
+                    produitData.put("prixAchat", Double.parseDouble(prixAchat));
+                    produitData.put("prixVente", Double.parseDouble(prixVente));
+                    produitData.put("stock", Integer.parseInt(stock));
+                    produitData.put("actif", Boolean.parseBoolean(actif));
+                    produitData.put("photo", photo);
+                    produitData.put("sousCategorie", "/api/categories/" + sousCategorie);
+                    produitData.put("idFournisseur", "/api/fournisseurs/" + idFournisseur);
+    
+                    // Afficher le JSON pour vérification
+                    System.out.println("Données envoyées : " + produitData.toString());
+    
+                    // Construction de la requête HTTP PUT
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create("https://127.0.0.1:8000/api/produits/" + id))
+                            .header("Content-Type", "application/json")
+                            .header("Authorization", "Bearer " + jwtToken)
+                            .PUT(HttpRequest.BodyPublishers.ofString(produitData.toString()))
+                            .build();
+    
+                    // Envoi de la requête et gestion de la réponse
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    if (response.statusCode() == 200) {  // 200 = OK
+    
+                    System.out.println("Réponse reçue : " + response.statusCode() + " " + response.body());
+    
+                    if (response.statusCode() == 200) {
                         JOptionPane.showMessageDialog(this, "Produit mis à jour avec succès !");
                     } else {
-                        JOptionPane.showMessageDialog(this, "Erreur lors de la mise à jour du produit : " + response.statusCode() + produitData.toString());
-                        // System.out.println(produitData.toString());
+                        JOptionPane.showMessageDialog(this, "Erreur lors de la mise à jour du produit : " + response.statusCode() + "\n" + response.body());
                     }
-                } catch (IOException | InterruptedException e) {
+                } catch (IOException | InterruptedException | NumberFormatException e) {
                     e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Erreur lors de l'envoi de la requête : " + e.getMessage());
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "Nom, description ou prix invalide.");
+                JOptionPane.showMessageDialog(this, "Certains champs sont manquants ou invalides.");
             }
         } else {
             JOptionPane.showMessageDialog(this, "ID de produit invalide.");
         }
     }
-
+            
     private void deleteEntity() {
         String id = JOptionPane.showInputDialog(this, "Entrez l'ID du produit à supprimer :");
         if (id != null && !id.isEmpty()) {
