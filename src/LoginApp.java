@@ -1,7 +1,11 @@
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -16,9 +20,12 @@ public class LoginApp extends Application {
     private PasswordField passwordField;
     private Button loginButton;
     private String jwtToken;
+    private Stage loginStage;
 
     @Override
     public void start(Stage primaryStage) {
+        this.loginStage = primaryStage;
+
         // Configurer la fenêtre de connexion
         primaryStage.setTitle("Connexion");
 
@@ -45,17 +52,14 @@ public class LoginApp extends Application {
             // Authentifier l'utilisateur
             try {
                 if (authenticate(username, password)) {
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION, "Connexion réussie !");
-                    alert.showAndWait();
-                    openMainWindow();  // Ouvrir la fenêtre principale après connexion
+                    showCustomSuccessDialog();
+                    openMainWindow();
                 } else {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Nom d'utilisateur ou mot de passe incorrect.");
-                    alert.showAndWait();
+                    showErrorAlert("Nom d'utilisateur ou mot de passe incorrect.");
                 }
             } catch (IOException | InterruptedException ex) {
                 ex.printStackTrace();
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Erreur lors de la connexion à l'API.");
-                alert.showAndWait();
+                showErrorAlert("Erreur lors de la connexion à l'API.");
             }
         });
 
@@ -79,7 +83,6 @@ public class LoginApp extends Application {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 200) {
-            // Extraire le token JWT de la réponse
             jwtToken = parseTokenFromResponse(response.body());
             return true;
         } else {
@@ -89,15 +92,46 @@ public class LoginApp extends Application {
 
     // Méthode pour extraire le token JWT de la réponse JSON
     private String parseTokenFromResponse(String responseBody) {
-        // Simplifié : en supposant que le token est dans le format {"token":"eyJhbGc..."}
         return responseBody.split(":")[1].replaceAll("[\"{}]", "").trim();
+    }
+
+    // Méthode pour afficher un message de succès personnalisé
+    private void showCustomSuccessDialog() {
+        // Création de la fenêtre modale
+        Stage dialogStage = new Stage();
+        dialogStage.initModality(Modality.WINDOW_MODAL);
+        dialogStage.setTitle("Connexion Réussie");
+
+        // Contenu de la fenêtre
+        Label successLabel = new Label("Connexion réussie !");
+        successLabel.setFont(new Font("Arial", 16));
+
+        Button closeButton = new Button("OK");
+        closeButton.setOnAction(e -> dialogStage.close());
+
+        VBox vbox = new VBox(20, successLabel, closeButton);
+        vbox.setAlignment(Pos.CENTER);
+        vbox.setStyle("-fx-padding: 20px;");
+
+        Scene dialogScene = new Scene(vbox, 250, 150);
+        dialogStage.setScene(dialogScene);
+        dialogStage.showAndWait();  // Attendre que l'utilisateur ferme la fenêtre
+    }
+
+    // Méthode pour afficher un message d'erreur
+    private void showErrorAlert(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Erreur");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     // Méthode pour ouvrir la fenêtre principale après connexion
     private void openMainWindow() {
-        // Fermer la fenêtre de connexion
+        loginStage.close();  // Fermer la fenêtre de connexion
+
         Stage mainStage = new Stage();
-        MainApp mainApp = new MainApp(jwtToken);  // Passer le jwtToken à la fenêtre principale
+        MainApp mainApp = new MainApp(jwtToken);
         try {
             mainApp.start(mainStage);  // Ouvre la fenêtre principale
         } catch (Exception e) {
@@ -109,6 +143,7 @@ public class LoginApp extends Application {
         launch(args);  // Lancer l'application JavaFX
     }
 }
+
 
 
 
