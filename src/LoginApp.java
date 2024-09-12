@@ -131,7 +131,7 @@ public class LoginApp extends Application {
         loginStage.close();  // Fermer la fenêtre de connexion
 
         Stage mainStage = new Stage();
-        MainApp mainApp = new MainApp(jwtToken);
+        Categorie2App mainApp = new Categorie2App(jwtToken);
         try {
             mainApp.start(mainStage);  // Ouvre la fenêtre principale
         } catch (Exception e) {

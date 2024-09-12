@@ -15,13 +15,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class MainApp extends Application {
+public class Categorie2App extends Application {
 
     private String jwtToken;
     private ListView<String> parentCategoriesListView;
     private ListView<String> subCategoriesListView;
 
-    public MainApp(String jwtToken) {
+    public Categorie2App(String jwtToken) {
         this.jwtToken = jwtToken;
     }
 
