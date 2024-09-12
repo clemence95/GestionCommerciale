@@ -3,9 +3,9 @@
     "configurations": [
         {
             "type": "java",
-            "name": "MainApp",
+            "name": "App",
             "request": "launch",
-            "mainClass": "MainApp",
+            "mainClass": "App",
             "projectName": "GestionCommerciale_d08ac4c1"
         },
         {

@@ -45,11 +45,15 @@ public class MainApp extends Application {
         Button loadCategoriesButton = new Button("Charger Catégories et Sous-Catégories");
         loadCategoriesButton.setOnAction(e -> loadCategoriesAndSubCategories());
 
+        // Ajout d'un bouton "Créer" pour ajouter une nouvelle catégorie
+        Button createCategoryButton = new Button("Créer Catégorie/Sous-Catégorie");
+        createCategoryButton.setOnAction(e -> openCategoryEditor(null, true, true)); // Ouvre l'éditeur pour créer une nouvelle catégorie parent
+
         VBox categoriesBox = new VBox(10, new Label("Catégories Parents"), parentCategoriesListView, new Label("Sous-Catégories"), subCategoriesListView);
         categoriesBox.setStyle("-fx-padding: 10px");
 
         HBox buttonPanel = new HBox(10);
-        buttonPanel.getChildren().add(loadCategoriesButton);
+        buttonPanel.getChildren().addAll(loadCategoriesButton, createCategoryButton); // Ajouter le bouton Créer ici
         buttonPanel.setStyle("-fx-alignment: center;");
 
         BorderPane root = new BorderPane();
@@ -134,86 +138,85 @@ public class MainApp extends Application {
         }
     }
 
-// Méthode pour ouvrir l'éditeur de catégorie ou sous-catégorie (création ou modification)
-private void openCategoryEditor(String selectedCategory, boolean isParentCategory, boolean isCreateMode) {
-    Stage editorStage = new Stage();
-    editorStage.setTitle(isCreateMode ? "Créer une Catégorie" : "Modifier la Catégorie");
-    editorStage.initModality(Modality.APPLICATION_MODAL);
+    // Méthode pour ouvrir l'éditeur de catégorie ou sous-catégorie (création ou modification)
+    private void openCategoryEditor(String selectedCategory, boolean isParentCategory, boolean isCreateMode) {
+        Stage editorStage = new Stage();
+        editorStage.setTitle(isCreateMode ? "Créer une Catégorie" : "Modifier la Catégorie");
+        editorStage.initModality(Modality.APPLICATION_MODAL);
 
-    // Initialiser les champs
-    TextField nameField = new TextField();
-    TextField imageField = new TextField("default.jpg"); // Champ pour entrer/modifier l'image
-    TextField categorieParentField = null;
+        // Initialiser les champs
+        TextField nameField = new TextField();
+        TextField imageField = new TextField("default.jpg"); // Champ pour entrer/modifier l'image
+        TextField categorieParentField = null;
 
-    // Déclaration de l'ID en dehors de la classe interne
-    final String[] id = {null}; 
+        // Déclaration de l'ID en dehors de la classe interne
+        final String[] id = {null};
 
-    // Si on est en mode modification, on extrait les informations de la catégorie
-    if (!isCreateMode && selectedCategory != null) {
-        String[] categoryDetails = selectedCategory.split("\n");
-        id[0] = categoryDetails[0].split(":")[1].trim(); // L'ID est stocké dans un tableau final pour être accessible dans les classes internes
-        String nom = categoryDetails[1].split(":")[1].trim();
-        String image = categoryDetails[2].split(":")[1].trim();
-        nameField.setText(nom);
-        imageField.setText(image);
+        // Si on est en mode modification, on extrait les informations de la catégorie
+        if (!isCreateMode && selectedCategory != null) {
+            String[] categoryDetails = selectedCategory.split("\n");
+            id[0] = categoryDetails[0].split(":")[1].trim(); // L'ID est stocké dans un tableau final pour être accessible dans les classes internes
+            String nom = categoryDetails[1].split(":")[1].trim();
+            String image = categoryDetails[2].split(":")[1].trim();
+            nameField.setText(nom);
+            imageField.setText(image);
 
+            if (!isParentCategory) {
+                String categorieParent = categoryDetails[3].split(":")[1].trim();
+                categorieParentField = new TextField(categorieParent); // Champ pour le parent
+            }
+        }
+
+        // Si c'est une sous-catégorie, on affiche également le champ pour le parent
         if (!isParentCategory) {
-            String categorieParent = categoryDetails[3].split(":")[1].trim();
-            categorieParentField = new TextField(categorieParent); // Champ pour le parent
+            if (categorieParentField == null) {
+                categorieParentField = new TextField(); // Champ vide si on est en mode création
+            }
         }
-    }
 
-    // Si c'est une sous-catégorie, on affiche également le champ pour le parent
-    if (!isParentCategory) {
-        if (categorieParentField == null) {
-            categorieParentField = new TextField(); // Champ vide si on est en mode création
+        Button saveButton = new Button(isCreateMode ? "Créer" : "Enregistrer");
+        Button deleteButton = null;
+        if (!isCreateMode) {
+            deleteButton = new Button("Supprimer"); // Ajout du bouton Supprimer pour le mode modification
         }
-    }
 
-    Button saveButton = new Button(isCreateMode ? "Créer" : "Enregistrer");
-    Button deleteButton = null;
-    if (!isCreateMode) {
-        deleteButton = new Button("Supprimer"); // Ajout du bouton Supprimer pour le mode modification
-    }
+        TextField finalCategorieParentField = categorieParentField;
+        saveButton.setOnAction(e -> {
+            String updatedName = nameField.getText();
+            String updatedImage = imageField.getText(); // Récupérer l'image mise à jour
+            String updatedParent = (finalCategorieParentField != null) ? finalCategorieParentField.getText() : null;
 
-    TextField finalCategorieParentField = categorieParentField;
-    saveButton.setOnAction(e -> {
-        String updatedName = nameField.getText();
-        String updatedImage = imageField.getText(); // Récupérer l'image mise à jour
-        String updatedParent = (finalCategorieParentField != null) ? finalCategorieParentField.getText() : null;
-
-        if (isCreateMode) {
-            createCategoryOnServer(updatedName, updatedImage, updatedParent); // Créer une nouvelle catégorie ou sous-catégorie
-        } else {
-            updateCategoryOnServer(id[0], updatedName, updatedImage, updatedParent); // Mettre à jour la catégorie ou sous-catégorie
-        }
-        editorStage.close();
-    });
-
-    // Action du bouton Supprimer (uniquement en mode modification)
-    if (deleteButton != null) {
-        deleteButton.setOnAction(e -> {
-            deleteCategoryFromServer(id[0]); // Supprime la catégorie
+            if (isCreateMode) {
+                createCategoryOnServer(updatedName, updatedImage, updatedParent); // Créer une nouvelle catégorie ou sous-catégorie
+            } else {
+                updateCategoryOnServer(id[0], updatedName, updatedImage, updatedParent); // Mettre à jour la catégorie ou sous-catégorie
+            }
             editorStage.close();
         });
-    }
 
-    VBox editorLayout = new VBox(10, new Label("Nom de la catégorie"), nameField, new Label("Image de la catégorie"), imageField);
-    if (!isParentCategory) {
-        editorLayout.getChildren().addAll(new Label("Catégorie Parent"), categorieParentField);
-    }
-    if (deleteButton != null) {
-        editorLayout.getChildren().addAll(saveButton, deleteButton); // Ajouter le bouton Supprimer uniquement si on est en mode modification
-    } else {
-        editorLayout.getChildren().add(saveButton); // Ajouter uniquement le bouton Enregistrer pour le mode création
-    }
-    editorLayout.setStyle("-fx-padding: 10px");
+        // Action du bouton Supprimer (uniquement en mode modification)
+        if (deleteButton != null) {
+            deleteButton.setOnAction(e -> {
+                deleteCategoryFromServer(id[0]); // Supprime la catégorie
+                editorStage.close();
+            });
+        }
 
-    Scene editorScene = new Scene(editorLayout, 300, 200);
-    editorStage.setScene(editorScene);
-    editorStage.show();
-}
+        VBox editorLayout = new VBox(10, new Label("Nom de la catégorie"), nameField, new Label("Image de la catégorie"), imageField);
+        if (!isParentCategory) {
+            editorLayout.getChildren().addAll(new Label("Catégorie Parent"), categorieParentField);
+        }
+        if (deleteButton != null) {
+            editorLayout.getChildren().addAll(saveButton, deleteButton); // Ajouter le bouton Supprimer uniquement si on est en mode modification
+        } else {
+            editorLayout.getChildren().add(saveButton); // Ajouter uniquement le bouton Enregistrer pour le mode création
+        }
+        editorLayout.setStyle("-fx-padding: 10px");
 
+        Scene editorScene = new Scene(editorLayout, 300, 200);
+        editorStage.setScene(editorScene);
+        editorStage.show();
+    }
 
     // Méthode pour créer une nouvelle catégorie ou sous-catégorie sur le serveur
     private void createCategoryOnServer(String name, String image, String parentCategoryId) {
@@ -332,6 +335,7 @@ private void openCategoryEditor(String selectedCategory, boolean isParentCategor
         launch(args);  // Lancer l'application JavaFX
     }
 }
+
 
 
 
