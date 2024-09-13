@@ -8,10 +8,8 @@
     /* Texte en gras */
 }
 
-/* Propriétés spécifiques à JavaFX */
 .button {
     background-color: #3498db;
-    /* Couleur de fond spécifique JavaFX */
     -fx-text-fill: white;
     /* Couleur du texte spécifique JavaFX */
     -fx-background-radius: 10;
