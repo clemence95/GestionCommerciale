@@ -22,7 +22,7 @@
     -fx-spacing: 20;
     /* Espacement spécifique JavaFX */
 }
-/* Note : le prefixe -FX- n'est pas obligatoire pour les propriétés standard mais seulement pour les propriétés spécifique à JavaFX ou quelque chose comme ça
+/* Note :
                                   Lien vers Oracle : https://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html                                     
 
 */
