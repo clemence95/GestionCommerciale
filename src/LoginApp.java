@@ -115,7 +115,7 @@ public class LoginApp extends Application {
 
         Scene dialogScene = new Scene(vbox, 250, 150);
         dialogStage.setScene(dialogScene);
-        dialogStage.showAndWait();  // Attendre que l'utilisateur ferme la fenêtre
+        dialogStage.showAndWait(); // Attendre que l'utilisateur ferme la fenêtre
     }
 
     // Méthode pour afficher un message d'erreur
@@ -128,24 +128,19 @@ public class LoginApp extends Application {
 
     // Méthode pour ouvrir la fenêtre principale après connexion
     private void openMainWindow() {
-        loginStage.close();  // Fermer la fenêtre de connexion
+        loginStage.close(); // Fermer la fenêtre de connexion
 
         Stage mainStage = new Stage();
-        Categorie2App mainApp = new Categorie2App(jwtToken);
+        MainApp mainApp = new MainApp(jwtToken); // Créer une instance de MainApp avec le token JWT
         try {
-            mainApp.start(mainStage);  // Ouvre la fenêtre principale
+            mainApp.start(mainStage); // Ouvre la fenêtre principale
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
-        launch(args);  // Lancer l'application JavaFX
+        launch(args); // Lancer l'application JavaFX
     }
+
 }
-
-
-
-
-
-
