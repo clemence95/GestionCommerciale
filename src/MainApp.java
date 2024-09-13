@@ -30,8 +30,14 @@ public class MainApp extends Application {
         // Layout pour les boutons
         VBox vbox = new VBox(10);
         vbox.getChildren().addAll(categoriesButton, produitsButton, commandesButton);
+        vbox.setId("vbox");  // Appliquer un ID pour styliser via le CSS
 
+        // Créer la scène
         Scene scene = new Scene(vbox, 300, 200);
+
+        // Charger et appliquer le fichier CSS
+        scene.getStylesheets().add(getClass().getResource("ressources/Style.css").toExternalForm());
+
         primaryStage.setScene(scene);
         primaryStage.show();
     }
