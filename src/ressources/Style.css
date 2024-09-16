@@ -1,15 +1,18 @@
-/* Propriétés standard */
 .root {
+    -fx-background-color: #2c3e50;
     background-color: #2c3e50;
-    /* Couleur de fond standard */
+    /* Couleur de fond spécifique JavaFX et standard */
+    -fx-font-size: 14px;
     font-size: 14px;
     /* Taille du texte */
+    -fx-font-weight: bold;
     font-weight: bold;
     /* Texte en gras */
 }
 
 .button {
     background-color: #3498db;
+    -fx-background-color: #3498db;
     -fx-text-fill: white;
     /* Couleur du texte spécifique JavaFX */
     -fx-background-radius: 10;
@@ -22,7 +25,8 @@
     -fx-spacing: 20;
     /* Espacement spécifique JavaFX */
 }
-/* Note :
+
+/* Note : 
                                   Lien vers Oracle : https://docs.oracle.com/javafx/2/api/javafx/scene/doc-files/cssref.html                                     
 
 */
