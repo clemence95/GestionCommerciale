@@ -6,6 +6,13 @@
             "name": "App",
             "request": "launch",
             "mainClass": "App",
+            "projectName": "GestionCommerciale_55a5ffb6"
+        },
+        {
+            "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "App",
             "projectName": "GestionCommerciale_d08ac4c1",
             "vmArgs": "--module-path ${workspaceFolder}/lib --add-modules javafx.controls,javafx.fxml -Dprism.order=es2 -Dprism.forceGPU=true -Dprism.verbose=true -Djava.library.path=${workspaceFolder}/lib"
         },
